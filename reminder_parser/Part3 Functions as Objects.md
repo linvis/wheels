@@ -1,5 +1,7 @@
 ---
-Tag: [hello]
+Review_need: True
+Review_date: 2019-05-24
+Review_times: 3
 ---
 
 # Part3 Functions as Objects
@@ -54,7 +56,7 @@ sorted(fruits, key=lambda word: word[::-1])
 
 * *User-defined functions*
 
-   Created with def statements or lambda expressions.
+  Created with def statements or lambda expressions.
 
 * *Built-in functions*
 
@@ -202,6 +204,7 @@ def Promotion1():
       
 def Promotion2():
      ... 
+
 ```
 
 但是如果是函数，我就可以把函数当成一个普通的变量，调用就很简单，可以把它当成一个普通的函数参数，直接传递。
