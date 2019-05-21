@@ -46,7 +46,7 @@ class Reminder:
 
         return self.today + datetime.timedelta(days=duration)
 
-    def filter(self, f):
+    def get_yaml_formatter(self, f):
         patt_yaml = re.compile('---\n((.|\n)+)---')
         patt_review = re.compile('Review_need: (.*)\nReview_date: (.*)\nReview_times: (.*)')
 
@@ -66,7 +66,7 @@ class Reminder:
         patt_date = re.compile('Review_date: (.*)')
         patt_times = re.compile('Review_times: (.*)')
             
-        ori_content = self.filter(f)
+        ori_content = self.get_yaml_formatter(f)
         if ori_content == None:
             return
 
