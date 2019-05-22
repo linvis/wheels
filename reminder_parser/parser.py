@@ -5,8 +5,14 @@ import datetime
 import argparse
 from datetime import date
 
+'''
+Bug: if yaml formatter has other contents, like, has a tag or date or author,
+but no review info, there will be an error in Reminder.read()
+'''
+
 __version__ = '1.0.0'
 
+#  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -56,10 +62,12 @@ class Reminder:
 
     def get_yaml_element(self, content, pattern):
 
-        element = [re.match(pattern, con) for con in content]
-        element = list(filter(lambda x: x != None, element))[0]
-
-        return element.group(1)
+        try:
+            element = [re.match(pattern, con) for con in content]
+            element = list(filter(lambda x: x != None, element))[0]
+            return element.group(1)
+        except:
+            return None
 
     def get_review_info(self, content):
         patt_need = re.compile('Review_need: (.*)')
@@ -182,16 +190,16 @@ class FileOp:
             if fs in  self.ignore_file:
                 continue
             
-            if os.path.isdir(fs):
+            if os.path.isdir(abs_fs):
                 filter_file.append(self.traverse(abs_fs, filter_func))
+            else:
+                filename, file_extension = os.path.splitext(fs)
+                if file_extension != '.md':
+                    continue
 
-            filename, file_extension = os.path.splitext(fs)
-            if file_extension != '.md':
-                continue
-
-            if filter_func != None \
-                and filter_func(abs_fs) == True:
-                filter_file.append(abs_fs)
+                if filter_func != None \
+                    and filter_func(abs_fs) == True:
+                    filter_file.append(abs_fs)
 
         return filter_file
 
@@ -236,16 +244,21 @@ if __name__ == '__main__':
     path = './'
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--version', action='store_true', help='show version')
-    parser.add_argument('show', nargs='?', help='show today\'review', default='None')
-    parser.add_argument('new', nargs='*', help='start a new review', default=None)
+    parser.add_argument('-s', '--show', action='store_true', help='show today\'s review')
+    parser.add_argument('-f', '--format', action='store_true', help='add yaml formatter')
+    parser.add_argument('-n', '--new', nargs='*', help='start a new review')
     args = parser.parse_args()
 
-    if args.show == 'show':
+    if args.show == True:
         op.get_today_remind(path)
 
     if args.version == True:
         print("version {}".format(__version__))
 
-    if len(args.new) > 0:
+    if args.new != None:
         op.start_review(args.new)
 
+    if args.format == True:
+        logger.info("Ready to format files")
+        op.format_file(path)
+        logger.info("Finish formatting files")
