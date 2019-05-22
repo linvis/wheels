@@ -2,13 +2,13 @@ import re
 import os
 import logging
 import datetime
+import argparse
 from datetime import date
 
+__version__ = '1.0.0'
 
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
-
-
 
 
 REVIEW_DURATION = {'1':1, '2':3, '3':7, '4':14, '5':30, '6':60, '7':90, '8':90}
@@ -131,7 +131,7 @@ class Reminder:
     def read(self, f):
         content = self.get_yaml_formatter(f)
         if content == None:
-            return
+            return None
 
         need, last_date, last_times = self.get_review_info(content)
 
@@ -140,10 +140,12 @@ class Reminder:
     def start_review(self, f): 
         content = self.get_yaml_formatter(f)
         if content == None:
-            return
+            return False
 
         logger.debug("start review, date:{}, review times:{}".format(self.today, 1))
         self.write_review_info(f, content, 'True', self.today, 1)
+
+        return True
 
     def add_yaml_formatter(self, f):
         content = self.get_yaml_formatter(f)
@@ -174,26 +176,27 @@ class FileOp:
     def traverse(self, path, filter_func=None):
         filter_file = []
         for fs in os.listdir(path):
+            abs_fs = os.path.abspath(path + '/' + fs)
             logger.debug("search file: {}".format(fs))
+
             if fs in  self.ignore_file:
                 continue
             
             if os.path.isdir(fs):
-                filter_file.append(traverse(path + '/' + fs))
+                filter_file.append(self.traverse(abs_fs, filter_func))
 
             filename, file_extension = os.path.splitext(fs)
             if file_extension != '.md':
                 continue
 
-            if filter_func != None and filter_func(os.path.abspath(fs)) == True:
-                filter_file.append(os.path.abspath(fs))
+            if filter_func != None \
+                and filter_func(abs_fs) == True:
+                filter_file.append(abs_fs)
 
         return filter_file
-        #  print(os.path.abspath(fs))
 
     def filter_today(self, f):
         reminder = Reminder()
-
         review = reminder.read(f)
         if review == None:
             return False
@@ -205,9 +208,9 @@ class FileOp:
 
     def filter_yaml_formatter(self, f):
         reminder = Reminder()
-
         review = reminder.read(f)
         if review == None:
+            logger.debug("no review info, add new")
             reminder.add_yaml_formatter(f)
 
         return True
@@ -218,9 +221,31 @@ class FileOp:
     def format_file(self, path):
         files = self.traverse(path, self.filter_yaml_formatter)
 
+    def start_review(self, files):
+        reminder = Reminder()
+        for f in files:
+            ret = reminder.start_review(f)
+            if ret == False:
+                logger.error("Fatal!!! can't start a review: {}".format(f))
+                continue
+            logger.debug("start a review at: {}".format(f))
 
 
+if __name__ == '__main__':
+    op = FileOp()
+    path = './'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--version', action='store_true', help='show version')
+    parser.add_argument('show', nargs='?', help='show today\'review', default='None')
+    parser.add_argument('new', nargs='*', help='start a new review', default=None)
+    args = parser.parse_args()
 
-op = FileOp()
-#  op.get_today_remind('./')
-op.format_file('./')
+    if args.show == 'show':
+        op.get_today_remind(path)
+
+    if args.version == True:
+        print("version {}".format(__version__))
+
+    if len(args.new) > 0:
+        op.start_review(args.new)
+
