@@ -228,7 +228,7 @@ class FileOp:
     def get_today_remind(self, path):
         files = self.traverse(path, self.filter_today)
         for f in files:
-            logger.info(f)
+            logger.info('\'' + f + '\'')
 
     def format_file(self, path):
         files = self.traverse(path, self.filter_yaml_formatter)
