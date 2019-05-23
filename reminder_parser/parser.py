@@ -12,8 +12,8 @@ but no review info, there will be an error in Reminder.read()
 
 __version__ = '1.0.0'
 
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
-#  logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+#  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -193,7 +193,7 @@ class FileOp:
                 continue
             
             if os.path.isdir(abs_fs):
-                filter_file.append(self.traverse(abs_fs, filter_func))
+                filter_file += self.traverse(abs_fs, filter_func)
             else:
                 filename, file_extension = os.path.splitext(fs)
                 if file_extension != '.md':
@@ -227,6 +227,8 @@ class FileOp:
 
     def get_today_remind(self, path):
         files = self.traverse(path, self.filter_today)
+        for f in files:
+            logger.info(f)
 
     def format_file(self, path):
         files = self.traverse(path, self.filter_yaml_formatter)
