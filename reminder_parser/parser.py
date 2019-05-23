@@ -12,8 +12,8 @@ but no review info, there will be an error in Reminder.read()
 
 __version__ = '1.0.0'
 
-#  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+#  logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +29,7 @@ class Reminder:
 
     def calc_next_review_date(self, times):
         duration = 0
-        if times not in REVIEW_DURATION.keys():
+        if str(times) not in REVIEW_DURATION.keys():
             duration = REVIEW_DURATION['8']
         else:
             duration = REVIEW_DURATION[str(times)]
@@ -124,17 +124,19 @@ class Reminder:
     def refresh(self, f):
         content = self.get_yaml_formatter(f)
         if content == None:
-            return
+            return False
 
         need, last_date, last_times = self.get_review_info(content)
         if need == 'Fasle':
-            return
+            return False
 
-        next_review_date = self.calc_next_review_date(last_times)
         next_review_times = int(last_times) + 1
+        next_review_date = self.calc_next_review_date(next_review_times)
         logger.debug("next review date:{}, review times:{}".format(next_review_date, next_review_times))
 
         self.write_review_info(f, content, need, next_review_date, next_review_times)
+
+        return True
 
     def read(self, f):
         content = self.get_yaml_formatter(f)
@@ -151,7 +153,7 @@ class Reminder:
             return False
 
         logger.debug("start review, date:{}, review times:{}".format(self.today, 1))
-        self.write_review_info(f, content, 'True', self.today, 1)
+        self.write_review_info(f, content, 'True', self.today + datetime.timedelta(days=1), 1)
 
         return True
 
@@ -238,6 +240,15 @@ class FileOp:
                 continue
             logger.debug("start a review at: {}".format(f))
 
+    def finish_review(self, files):
+        reminder = Reminder()
+        for f in files:
+            ret = reminder.refresh(f)
+            if ret == False:
+                logger.error("Fatal!!! can't finish a review: {}".format(f))
+                continue
+            logger.debug("finish a review at: {}".format(f))
+
 
 if __name__ == '__main__':
     op = FileOp()
@@ -247,6 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--show', action='store_true', help='show today\'s review')
     parser.add_argument('-f', '--format', action='store_true', help='add yaml formatter')
     parser.add_argument('-n', '--new', nargs='*', help='start a new review')
+    parser.add_argument('-r', '--review', nargs='*', help='had finished a review')
     args = parser.parse_args()
 
     if args.show == True:
@@ -262,3 +274,6 @@ if __name__ == '__main__':
         logger.info("Ready to format files")
         op.format_file(path)
         logger.info("Finish formatting files")
+
+    if args.review != None:
+        op.finish_review(args.review)

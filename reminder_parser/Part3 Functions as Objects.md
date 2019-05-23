@@ -1,9 +1,8 @@
 ---
 Review_need: True
-Review_date: 2019-05-22
-Review_times: 1
+Review_date: 2019-05-26
+Review_times: 2
 ---
-
 # Part3 Functions as Objects
 
 ## Chapter 5 First-Class Function
