@@ -211,7 +211,9 @@ class FileOp:
         if review == None:
             return False
 
-        if review[0] == 'True' and review[1] == str(reminder.today):
+        review_date = datetime.datetime.strptime(review[1], '%Y-%m-%d').date()
+
+        if review[0] == 'True' and (reminder.today - review_date).days >= 0:
             return True
         else:
             return False
